@@ -1,0 +1,121 @@
+<html> 
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>CURRY-COMPOSE-READER-MACROS - concise function partial application and composition</title>
+  <style type="text/css">
+  pre { padding:5px; background-color:#e0e0e0 }
+  h3, h4 { text-decoration: underline; }
+  a { text-decoration: none; padding: 1px 2px 1px 2px; }
+  a:visited { text-decoration: none; padding: 1px 2px 1px 2px; }
+  a:hover { text-decoration: none; padding: 1px 1px 1px 1px; border: 1px solid #000000; } 
+  a:focus { text-decoration: none; padding: 1px 2px 1px 2px; border: none; }
+  a.none { text-decoration: none; padding: 0; }
+  a.none:visited { text-decoration: none; padding: 0; } 
+  a.none:hover { text-decoration: none; border: none; padding: 0; } 
+  a.none:focus { text-decoration: none; border: none; padding: 0; } 
+  a.noborder { text-decoration: none; padding: 0; } 
+  a.noborder:visited { text-decoration: none; padding: 0; } 
+  a.noborder:hover { text-decoration: none; border: none; padding: 0; } 
+  a.noborder:focus { text-decoration: none; border: none; padding: 0; }  
+  pre.none { padding:5px; background-color:#ffffff }
+  </style>
+</head>
+
+<body bgcolor=white>
+
+<h2> CURRY-COMPOSE-READER-MACROS - concise function partial application and composition</h2>
+
+<br>&nbsp;<br><h3><a name=abstract class=none>Abstract</a></h3>
+
+<p>CURRY-COMPOSE-READER-MACROS exports a single function
+ which may be called to enable reading of <code>{}</code> braces as
+ partial function application and <code>[]</code> brackets as function
+ composition.</p>
+
+The code is available under the <a
+href="http://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License</a>.
+
+<p>
+<font color=red>Source:</font>
+<a href="http://github.com/eschulte/curry-compose-reader-macros">http://github.com/eschulte/curry-compose-reader-macros</a>.
+
+<br>&nbsp;<br><h3><a class=none name="contents">Contents</a></h3>
+<ol>
+  <li><a href="#source">Source</a></li>
+  <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#dictionary">The CURRY-COMPOSE-READER-MACROS dictionary</a></li>
+    <ol>
+      <li><a href="#enable-curry-compose-reader-macros"><code>enable-curry-compose-reader-macros</code></a></li>
+    </ol>
+  <li><a href="#ack">Acknowledgements</a></li>
+</ol>
+
+<br>&nbsp;<br><h3><a class=none name="source">Source</a></h3>
+
+CURRY-COMPOSE-READER-MACROS together with this documentation can be found at <a
+href="http://github.com/eschulte/curry-compose-reader-macros">http://github.com/eschulte/curry-compose-reader-macros</a>.
+
+<br>&nbsp;<br><h3><a class=none name="introduction">Introduction</a></h3>
+
+<p>Reader macros for concise expression of function partial
+application and composition.</p>
+
+<p>These reader macros expand into the <code>curry</code>, <code>rcurry</code> and <code>compose</code>
+functions from the Alexandria library.  The contents of curly
+brackets are curried and the contents of square brackets are
+composed.  The <code>_</code> symbol inside curly brackets changes the order
+of arguments with <code>rcurry</code>.</p>
+
+<p>The following examples demonstrate usage.</p>
+
+<pre><code>;; partial application `curry`
+(mapcar {+ 1} '(1 2 3 4)) ; =&gt; (2 3 4 5)
+
+;; alternate order of arguments `rcurry`
+(mapcar {- _ 1} '(1 2 3 4)) ; =&gt; (0 1 2 3)
+
+;; function composition
+(mapcar [#'list {* 2}] '(1 2 3 4)) ; =&gt; ((2) (4) (6) (8))
+</code></pre>
+
+<p>Call <code>enable-curry-compose-reader-macros</code> from within <code>eval-when</code>
+to ensure that reader macros are defined for both compilation and
+execution.</p>
+
+<pre><code>(eval-when (:compile-toplevel :load-toplevel :execute)
+  (enable-curry-compose-reader-macros))
+</code></pre>
+
+<br>&nbsp;<br><h3><a class=none name="dictionary">The CURRY-COMPOSE-READER-MACROS dictionary</a></h3>
+
+
+<!-- Entry for ENABLE-CURRY-COMPOSE-READER-MACROS -->
+
+<p><br>[Function]<br><a class=none name='enable-curry-compose-reader-macros'><b>enable-curry-compose-reader-macros</b> <i></i> =&gt; <i>result</i></a>
+<blockquote><br>
+
+Enable concise syntax for Alexandria's <code>curry</code>, <code>rcurry</code> and <code>compose</code>.
+
+Calls to this function should be wrapped in <code>eval-when</code> as shown below
+to ensure evaluation during compilation.
+
+<pre>
+    (eval-when (:compile-toplevel :load-toplevel :execute)
+      (enable-curry-compose-reader-macros))
+</pre>
+
+
+</blockquote>
+
+<!-- End of entry for ENABLE-CURRY-COMPOSE-READER-MACROS -->
+
+
+<br>&nbsp;<br><h3><a class=none name="ack">Acknowledgements</a></h3>
+
+<p>
+This documentation was prepared with a hacked up version of <a href="http://weitz.de/documentation-template/">DOCUMENTATION-TEMPLATE</a>.
+</p>
+
+</body>
+</html>
