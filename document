@@ -1,0 +1,15 @@
+#!/usr/bin/sbcl --script
+;; -*- lisp -*-
+(load "~/.sbclrc" :if-does-not-exist nil)
+(require :curry-compose-reader-macros)
+(require :schulte-documentation-template)
+
+(schulte-documentation-template:create-template
+ :curry-compose-reader-macros
+ :maybe-skip-methods-p t
+ :target "curry-compose-reader-macros.html"
+ :subtitle "concise function partial application and composition"
+ :abstract "CURRY-COMPOSE-READER-MACROS exports a single function
+ which may be called to enable reading of <code>{}</code> braces as
+ partial function application and <code>[]</code> brackets as function
+ composition.")
