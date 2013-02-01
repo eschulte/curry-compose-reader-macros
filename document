@@ -12,4 +12,5 @@
  :abstract "CURRY-COMPOSE-READER-MACROS exports a single function
  which may be called to enable reading of <code>{}</code> braces as
  partial function application and <code>[]</code> brackets as function
- composition.")
+ composition."
+ :source "http://github.com/eschulte/curry-compose-reader-macros")
