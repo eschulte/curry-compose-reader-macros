@@ -1,5 +1,7 @@
 (defsystem :curry-compose-reader-macros
-  :description "reader macros for concise partial application and composition"
+  :description
+  "reader macros for concise function partial application and composition"
+  :author "Eric Schulte <schulte.eric@gmail.com>"
   :version "1.0.0"
   :licence "GPL V3"
   :depends-on (alexandria)
