@@ -32,6 +32,26 @@
 ;;
 ;;     (eval-when (:compile-toplevel :load-toplevel :execute)
 ;;       (enable-curry-compose-reader-macros))
+;;
+;; Emacs users may easily treat {}'s and []'s like parenthesis for
+;; paredit commands and SEXP movement with the following
+;; configuration.
+;; 
+;;     ;; Syntax table
+;;     (modify-syntax-entry ?\[ "(]" lisp-mode-syntax-table)
+;;     (modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
+;;     (modify-syntax-entry ?\{ "(}" lisp-mode-syntax-table)
+;;     (modify-syntax-entry ?\} "){" lisp-mode-syntax-table)
+;;     
+;;     ;; Paredit keys
+;;     (eval-after-load "paredit"
+;;       '(progn
+;;         (define-key paredit-mode-map "[" 'paredit-open-parenthesis)
+;;         (define-key paredit-mode-map "]" 'paredit-close-parenthesis)
+;;         (define-key paredit-mode-map "(" 'paredit-open-bracket)
+;;         (define-key paredit-mode-map ")" 'paredit-close-bracket)
+;;         (define-key paredit-mode-map "{" 'paredit-open-curly)
+;;         (define-key paredit-mode-map "}" 'paredit-close-curly)))
 
 ;;; Code:
 (in-package :curry-compose-reader-macros)
