@@ -87,6 +87,27 @@ execution.</p>
   (enable-curry-compose-reader-macros))
 </code></pre>
 
+<p>Emacs users may easily treat {}'s and []'s like parenthesis for
+paredit commands and SEXP movement with the following
+configuration.</p>
+
+<pre><code>;; Syntax table
+(modify-syntax-entry ?\[ "(]" lisp-mode-syntax-table)
+(modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
+(modify-syntax-entry ?\{ "(}" lisp-mode-syntax-table)
+(modify-syntax-entry ?\} "){" lisp-mode-syntax-table)
+
+;; Paredit keys
+(eval-after-load "paredit"
+  '(progn
+    (define-key paredit-mode-map "[" 'paredit-open-parenthesis)
+    (define-key paredit-mode-map "]" 'paredit-close-parenthesis)
+    (define-key paredit-mode-map "(" 'paredit-open-bracket)
+    (define-key paredit-mode-map ")" 'paredit-close-bracket)
+    (define-key paredit-mode-map "{" 'paredit-open-curly)
+    (define-key paredit-mode-map "}" 'paredit-close-curly)))
+</code></pre>
+
 <br>&nbsp;<br><h3><a class=none name="dictionary">The CURRY-COMPOSE-READER-MACROS dictionary</a></h3>
 
 
