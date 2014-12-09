@@ -26,6 +26,9 @@
 ;;     ;; function composition
 ;;     (mapcar [#'list {* 2}] '(1 2 3 4)) ; => ((2) (4) (6) (8))
 ;;
+;;     ;; function split and join
+;;     (mapcar <{* 2} {* 3}> '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
+;;
 ;; Call `enable-curry-compose-reader-macros' from within `eval-when'
 ;; to ensure that reader macros are defined for both compilation and
 ;; execution.
@@ -33,8 +36,8 @@
 ;;     (eval-when (:compile-toplevel :load-toplevel :execute)
 ;;       (enable-curry-compose-reader-macros))
 ;;
-;; Emacs users may easily treat {}'s and []'s like parenthesis for
-;; paredit commands and SEXP movement with the following
+;; Emacs users may easily treat {}'s, []'s and <>'s like parenthesis
+;; for paredit commands and SEXP movement with the following
 ;; configuration.
 ;; 
 ;;     ;; Syntax table
@@ -42,6 +45,8 @@
 ;;     (modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\{ "(}" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\} "){" lisp-mode-syntax-table)
+;;     (modify-syntax-entry ?\< "(>" lisp-mode-syntax-table)
+;;     (modify-syntax-entry ?\> ")<" lisp-mode-syntax-table)
 ;;     
 ;;     ;; Paredit keys
 ;;     (eval-after-load "paredit"
@@ -51,7 +56,9 @@
 ;;         (define-key paredit-mode-map "(" 'paredit-open-bracket)
 ;;         (define-key paredit-mode-map ")" 'paredit-close-bracket)
 ;;         (define-key paredit-mode-map "{" 'paredit-open-curly)
-;;         (define-key paredit-mode-map "}" 'paredit-close-curly)))
+;;         (define-key paredit-mode-map "}" 'paredit-close-curly)
+;;         (define-key paredit-mode-map "<" 'paredit-open-angled)
+;;         (define-key paredit-mode-map ">" 'paredit-close-angled)))
 
 ;;; Code:
 (in-package :curry-compose-reader-macros)
@@ -88,4 +95,17 @@ to ensure evaluation during compilation.
     (cons 'compose (read-delimited-list #\] stream t)))
 
   (set-macro-character #\[ #'lsquare-brace-reader)
-  (set-macro-character #\] (get-macro-character #\) )))
+  (set-macro-character #\] (get-macro-character #\) ))
+
+  ;; list split collection with <>
+  (set-syntax-from-char #\< #\( )
+  (set-syntax-from-char #\> #\) )
+
+  (defun langle-brace-reader (stream inchar)
+    (declare (ignore inchar))
+    (let ((funcs (cons 'list (read-delimited-list #\> stream t))))
+      `(compose (curry #'mapcar #'funcall ,funcs)
+                (curry #'make-list ,(length funcs) :initial-element))))
+
+  (set-macro-character #\< #'langle-brace-reader)
+  (set-macro-character #\> (get-macro-character #\))))
