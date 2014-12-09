@@ -20,11 +20,12 @@ The following examples demonstrate usage.
     ;; function composition
     (mapcar [#'list {* 2}] '(1 2 3 4)) ; => ((2) (4) (6) (8))
 
-Additionally angle brackets may be used to split arguments amongst a
-list of functions and collect the results.
+Additionally, if optional utf8 support is enabled, special brackets
+may be used to split arguments amongst a list of functions and collect
+the results.
 
     ;; function split and join
-    (mapcar <{* 2} {* 3}> '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
+    (mapcar «{* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
 
 To use call `enable-curry-compose-reader-macros` from within
 `eval-when` to ensure that reader macros are defined for both
@@ -33,7 +34,12 @@ compilation and execution.
     (eval-when (:compile-toplevel :load-toplevel :execute)
       (enable-curry-compose-reader-macros))
 
-Emacs users may easily treat `{}`'s, `[]`'s and `<>`'s as parenthesis
+Or to load utf8 support as well (which is probably going too far).
+
+    (eval-when (:compile-toplevel :load-toplevel :execute)
+      (enable-curry-compose-reader-macros :include-utf8))
+
+Emacs users may easily treat `{}`'s, `[]`'s and `«»`'s as parenthesis
 for paredit commands and SEXP movement with the following
 configuration.
 
@@ -42,8 +48,9 @@ configuration.
     (modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
     (modify-syntax-entry ?\{ "(}" lisp-mode-syntax-table)
     (modify-syntax-entry ?\} "){" lisp-mode-syntax-table)
-    (modify-syntax-entry ?\< "(>" lisp-mode-syntax-table)
-    (modify-syntax-entry ?\> ")<" lisp-mode-syntax-table)
+    ;; optional UTF8 characters
+    (modify-syntax-entry ?\« "(»" lisp-mode-syntax-table)
+    (modify-syntax-entry ?\» ")«" lisp-mode-syntax-table)
 
     ;; Paredit keys
     (eval-after-load "paredit"
@@ -53,6 +60,4 @@ configuration.
         (define-key paredit-mode-map "(" 'paredit-open-bracket)
         (define-key paredit-mode-map ")" 'paredit-close-bracket)
         (define-key paredit-mode-map "{" 'paredit-open-curly)
-        (define-key paredit-mode-map "}" 'paredit-close-curly)
-        (define-key paredit-mode-map "<" 'paredit-open-angled)
-        (define-key paredit-mode-map ">" 'paredit-close-angled)))
+        (define-key paredit-mode-map "}" 'paredit-close-curly)))
