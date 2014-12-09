@@ -32,3 +32,27 @@ compilation and execution.
 
     (eval-when (:compile-toplevel :load-toplevel :execute)
       (enable-curry-compose-reader-macros))
+
+Emacs users may easily treat `{}`'s, `[]`'s and `<>`'s as parenthesis
+for paredit commands and SEXP movement with the following
+configuration.
+
+    ;; Syntax table
+    (modify-syntax-entry ?\[ "(]" lisp-mode-syntax-table)
+    (modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
+    (modify-syntax-entry ?\{ "(}" lisp-mode-syntax-table)
+    (modify-syntax-entry ?\} "){" lisp-mode-syntax-table)
+    (modify-syntax-entry ?\< "(>" lisp-mode-syntax-table)
+    (modify-syntax-entry ?\> ")<" lisp-mode-syntax-table)
+
+    ;; Paredit keys
+    (eval-after-load "paredit"
+      '(progn
+        (define-key paredit-mode-map "[" 'paredit-open-parenthesis)
+        (define-key paredit-mode-map "]" 'paredit-close-parenthesis)
+        (define-key paredit-mode-map "(" 'paredit-open-bracket)
+        (define-key paredit-mode-map ")" 'paredit-close-bracket)
+        (define-key paredit-mode-map "{" 'paredit-open-curly)
+        (define-key paredit-mode-map "}" 'paredit-close-curly)
+        (define-key paredit-mode-map "<" 'paredit-open-angled)
+        (define-key paredit-mode-map ">" 'paredit-close-angled)))

@@ -36,7 +36,7 @@
 ;;     (eval-when (:compile-toplevel :load-toplevel :execute)
 ;;       (enable-curry-compose-reader-macros))
 ;;
-;; Emacs users may easily treat {}'s, []'s and <>'s like parenthesis
+;; Emacs users may easily treat {}'s, []'s and <>'s as parenthesis
 ;; for paredit commands and SEXP movement with the following
 ;; configuration.
 ;; 
