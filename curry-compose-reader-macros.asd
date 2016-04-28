@@ -4,7 +4,7 @@
   :author "Eric Schulte <schulte.eric@gmail.com>"
   :version "1.0.0"
   :licence "Public Domain"
-  :depends-on (alexandria)
+  :depends-on (alexandria series)
   :components
   ((:file "package")
    (:file "curry-compose-reader-macros" :depends-on ("package"))))

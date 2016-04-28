@@ -57,7 +57,7 @@
 ;; Emacs users may easily treat {}'s, []'s and «»'s as parenthesis
 ;; for paredit commands and SEXP movement with the following
 ;; configuration.
-;; 
+;;
 ;;     ;; Syntax table
 ;;     (modify-syntax-entry ?\[ "(]" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
@@ -65,7 +65,7 @@
 ;;     (modify-syntax-entry ?\} "){" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\« "(»" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\» ")«" lisp-mode-syntax-table)
-;;     
+;;
 ;;     ;; Paredit keys
 ;;     (eval-after-load "paredit"
 ;;       '(progn
@@ -79,7 +79,7 @@
 ;;; Code:
 (in-package :curry-compose-reader-macros)
 
-(defun enable-curry-compose-reader-macros (&optional include-utf8)
+(defun enable-curry-compose-reader-macros (&optional include-utf8 include-series)
   "Enable concise syntax for Alexandria's `curry', `rcurry' and `compose'.
 
 Calls to this function should be wrapped in `eval-when' as shown below
@@ -128,4 +128,65 @@ to ensure evaluation during compilation.
                   (curry #'make-list ,(length funcs) :initial-element))))
 
     (set-macro-character #\« #'langle-quotation-reader)
-    (set-macro-character #\» (get-macro-character #\)))))
+    (set-macro-character #\» (get-macro-character #\))))
+
+  (when include-series ; Taken from the #M macro in the series package.
+
+    ;; Mapping.
+    (defun mapit (fn type args)
+      (if (not (symbolp fn))
+          `(series:map-fn ',type ,fn ,@args)
+          (cl:let ((vars (do ((a args (cdr a))
+                              (l nil (cons (gensym "V-") l)))
+                             ((null a) (return l)))))
+            `(series:map-fn ',type (function (lambda ,vars (,fn ,@ vars))) ,@args))))
+
+    (defmacro mapit-1 (fn &rest args) (mapit fn t args))
+    (defmacro mapit-2 (fn &rest args) (mapit fn '(values t t) args))
+    (defmacro mapit-3 (fn &rest args) (mapit fn '(values t t t) args))
+    (defmacro mapit-4 (fn &rest args) (mapit fn '(values t t t t) args))
+    (defmacro mapit-5 (fn &rest args) (mapit fn '(values t t t t t) args))
+
+    (defun series-abbrev-map-reader (stream subchar arg)
+      (declare (ignorable stream subchar))
+      (case arg
+        ((1 nil) 'mapit-1)
+        (2 'mapit-2)
+        (3 'mapit-3)
+        (4 'mapit-4)
+        (5 'mapit-5)
+        (:otherwise
+         (error
+          "The numeric argument to #M must be between 1 and 5 inclusive"))))
+
+    (set-dispatch-macro-character #\# #\M #'series-abbrev-map-reader)
+
+    ;; Until.
+    (defmacro untilit (fn &rest args)
+      (if (not (symbolp fn))
+          `(series:until-if ,fn ,@ args)
+          (cl:let ((vars (do ((a args (cdr a))
+                              (l nil (cons (gensym "V-") l)))
+                             ((null a) (return l)))))
+            `(series:until-if (function (lambda ,vars (,fn ,@ vars))) ,@ args))))
+
+    (defun series-abbrev-until-reader (stream subchar arg)
+      (declare (ignorable stream subchar arg))
+      'untilit)
+
+    (set-dispatch-macro-character #\# #\U #'series-abbrev-until-reader)
+
+    ;; Removal.
+    (defmacro chooseit (fn &rest args)
+      (if (not (symbolp fn))
+          `(series:choose-if ,fn ,@ args)
+          (cl:let ((vars (do ((a args (cdr a))
+                              (l nil (cons (gensym "V-") l)))
+                             ((null a) (return l)))))
+            `(series:choose-if (function (lambda ,vars (,fn ,@ vars))) ,@ args))))
+
+    (defun series-abbrev-choose-reader (stream subchar arg)
+      (declare (ignorable stream subchar arg))
+      'chooseit)
+
+    (set-dispatch-macro-character #\# #\C #'series-abbrev-choose-reader)))
