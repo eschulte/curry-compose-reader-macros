@@ -27,22 +27,19 @@ the results.
     ;; function split and join
     (mapcar «{* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
 
-To use call `enable-curry-compose-reader-macros` from within
+`enable-curry-compose-reader-macros` is a macro which wraps itself in
 `eval-when` to ensure that reader macros are defined for both
 compilation and execution.
 
-    (eval-when (:compile-toplevel :load-toplevel :execute)
-      (enable-curry-compose-reader-macros))
+    (enable-curry-compose-reader-macros)
 
 Or to load utf8 support as well (which is probably going too far).
 
-    (eval-when (:compile-toplevel :load-toplevel :execute)
-      (enable-curry-compose-reader-macros :include-utf8))
+    (enable-curry-compose-reader-macros :include-utf8)
 
 To load support for working with the series library.
 
-    (eval-when (:compile-toplevel :load-toplevel :execute)
-      (enable-curry-compose-reader-macros nil :include-series))
+    (enable-curry-compose-reader-macros nil :include-series)
 
 This will enable the following three reader macros.
 
