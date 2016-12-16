@@ -40,7 +40,9 @@
 ;;     (mapcar [#'list {* 2}] '(1 2 3 4)) ; => ((2) (4) (6) (8))
 ;;
 ;;     ;; function split and join (with the `include-utf8' option)
-;;     (mapcar «{* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
+;;     (mapcar «list {* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
+;;     (mapcar «and {< 2} #'evenp» '(1 2 3 4)) ; => (NIL NIL NIL T)
+;;     (mapcar «+ {* 2} {- _ 1}» '(1 2 3 4)) ; => (2 5 8 11)
 ;;
 ;; `enable-curry-compose-reader-macros' is a macro which wraps itself
 ;; in `eval-when' to ensure that reader macros are defined for both
@@ -140,9 +142,11 @@
 
        (defun langle-quotation-reader (stream inchar)
          (declare (ignore inchar))
-         (let ((funcs (cons 'list (read-delimited-list #\» stream t))))
-           `(compose (curry #'mapcar #'funcall ,funcs)
-                     (curry #'make-list ,(length funcs) :initial-element))))
+         (let ((contents (read-delimited-list #\» stream t))
+               (args (gensym "langle-quotation-reader")))
+           `(lambda (&rest ,args)
+              (,(car contents)    ; Join function (or macro).
+                ,@(mapcar (lambda (fun) `(apply ,fun ,args)) (cdr contents))))))
 
        (set-macro-character #\« #'langle-quotation-reader)
        (set-macro-character #\» (get-macro-character #\))))

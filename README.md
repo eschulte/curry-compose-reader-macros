@@ -22,10 +22,15 @@ The following examples demonstrate usage.
 
 Additionally, if optional utf8 support is enabled, special brackets
 may be used to split arguments amongst a list of functions and collect
-the results.
+the results.  The first element of the `«»`-delimited list is the
+"join" function.  Incoming arguments are split out to the remaining
+functions in the `«»`-delimited list, and their results are then
+passed to the join function.
 
     ;; function split and join
-    (mapcar «{* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
+    (mapcar «list {* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
+    (mapcar «and {< 2} #'evenp» '(1 2 3 4)) ; => (NIL NIL NIL T)
+    (mapcar «+ {* 2} {- _ 1}» '(1 2 3 4)) ; => (2 5 8 11)
 
 `enable-curry-compose-reader-macros` is a macro which wraps itself in
 `eval-when` to ensure that reader macros are defined for both
