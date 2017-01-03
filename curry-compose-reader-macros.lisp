@@ -52,30 +52,6 @@
 ;;
 ;;     (enable-curry-compose-reader-macros :include-utf8)
 ;;
-;; To load support for working with the series library.
-;;
-;;     (enable-curry-compose-reader-macros nil :include-series)
-;;
-;; This will enable the following three reader macros.
-;;
-;; \#M
-;; :   *Map* a function over a series.  This is a very slight variation on
-;;     #M in the series library.  This macro expands into an appropriate
-;;     call to the `series:map-fn` function enabling forms using like
-;;     the following.
-;;
-;;         (#M [{+ 1} {* 2}] #Z(1 2 3 4)) ; => #Z(3 5 7 9)
-;;
-;; \#U 
-;; :   Take from a series *until* a function matches.
-;;
-;;         (#U [{= 4} {+ 1}] (scan-range)) ; => #Z(0 1 2)
-;;
-;; \#C
-;; :   *Choose* from a series when a function matches.
-;;
-;;         (#C [#'oddp {+ 1}] #Z(1 2 3 4)) ; => #Z(2 4)
-;;
 ;; Emacs users may easily treat {}'s, []'s and «»'s as parenthesis
 ;; for paredit commands and SEXP movement with the following
 ;; configuration.
@@ -103,8 +79,7 @@
 
 (defvar *previous-readtables* nil)
 
-(defmacro enable-curry-compose-reader-macros
-    (&optional include-utf8 include-series)
+(defmacro enable-curry-compose-reader-macros (&optional include-utf8)
   "Enable concise syntax for Alexandria's `curry', `rcurry' and `compose'."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (push *readtable* *previous-readtables*)
@@ -150,70 +125,7 @@
                            ,@(mapcar (lambda (fun) `(apply ,fun ,args)) (cdr contents))))))
 
                   (set-macro-character #\« #'langle-quotation-reader)
-                  (set-macro-character #\» (get-macro-character #\)))))
-
-     ,@(when include-series ; Taken from the #M macro in the series package.
-         `((require :series)
-
-           ;; Mapping.
-           (defun mapit (fn type args)
-             (if (not (symbolp fn))
-                 `(series:map-fn ',type ,fn ,@args)
-                 (cl:let ((vars (do ((a args (cdr a))
-                                     (l nil (cons (gensym "V-") l)))
-                                    ((null a) (return l)))))
-                   `(series:map-fn
-                     ',type (function (lambda ,vars (,fn ,@ vars))) ,@args))))
-
-           (defmacro mapit-1 (fn &rest args) (mapit fn t args))
-           (defmacro mapit-2 (fn &rest args) (mapit fn '(values t t) args))
-           (defmacro mapit-3 (fn &rest args) (mapit fn '(values t t t) args))
-           (defmacro mapit-4 (fn &rest args) (mapit fn '(values t t t t) args))
-           (defmacro mapit-5 (fn &rest args) (mapit fn '(values t t t t t) args))
-
-           (defun series-abbrev-map-reader (stream subchar arg)
-             (declare (ignorable stream subchar))
-             (case arg
-               ((1 nil) 'mapit-1)
-               (2 'mapit-2)
-               (3 'mapit-3)
-               (4 'mapit-4)
-               (5 'mapit-5)
-               (:otherwise
-                (error
-                 "The numeric argument to #M must be between 1 and 5 inclusive"))))
-
-           (set-dispatch-macro-character #\# #\M #'series-abbrev-map-reader)
-
-           ;; Until.
-           (defmacro untilit (fn &rest args)
-             (if (not (symbolp fn))
-                 `(series:until-if ,fn ,@ args)
-                 (cl:let ((vars (do ((a args (cdr a))
-                                     (l nil (cons (gensym "V-") l)))
-                                    ((null a) (return l)))))
-                   `(series:until-if (function (lambda ,vars (,fn ,@ vars))) ,@ args))))
-
-           (defun series-abbrev-until-reader (stream subchar arg)
-             (declare (ignorable stream subchar arg))
-             'untilit)
-
-           (set-dispatch-macro-character #\# #\U #'series-abbrev-until-reader)
-
-           ;; Removal.
-           (defmacro chooseit (fn &rest args)
-             (if (not (symbolp fn))
-                 `(series:choose-if ,fn ,@ args)
-                 (cl:let ((vars (do ((a args (cdr a))
-                                     (l nil (cons (gensym "V-") l)))
-                                    ((null a) (return l)))))
-                   `(series:choose-if (function (lambda ,vars (,fn ,@ vars))) ,@ args))))
-
-           (defun series-abbrev-choose-reader (stream subchar arg)
-             (declare (ignorable stream subchar arg))
-             'chooseit)
-
-           (set-dispatch-macro-character #\# #\C #'series-abbrev-choose-reader)))))
+                  (set-macro-character #\» (get-macro-character #\)))))))
 
 (defmacro disable-curry-compose-reader-macros ()
   '(eval-when (:compile-toplevel :load-toplevel :execute)

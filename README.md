@@ -42,29 +42,6 @@ Or to load utf8 support as well (which is probably going too far).
 
     (enable-curry-compose-reader-macros :include-utf8)
 
-To load support for working with the series library.
-
-    (enable-curry-compose-reader-macros nil :include-series)
-
-This will enable the following three reader macros.
-
-\#M
-:   *Map* a function over a series.  This is a very slight variation on
-    #M in the series library.  This macro expands into an appropriate
-    call to the `series:map-fn` function enabling forms using like the following.
-
-        (#M [{+ 1} {* 2}] #Z(1 2 3 4)) ; => #Z(3 5 7 9)
-
-\#U 
-:   Take from a series *until* a function matches.
-
-        (#U [{= 4} {+ 1}] (scan-range)) ; => #Z(0 1 2)
-
-\#C
-:   *Choose* from a series when a function matches.
-
-        (#C [#'oddp {+ 1}] #Z(1 2 3 4)) ; => #Z(2 4)
-
 Emacs users may easily treat `{}`'s, `[]`'s and `«»`'s as parenthesis
 for paredit commands and SEXP movement with the following
 configuration.
