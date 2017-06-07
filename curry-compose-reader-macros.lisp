@@ -87,12 +87,13 @@
      (set-syntax-from-char #\{ #\( )
      (set-syntax-from-char #\} #\) )
 
-     (defun lcurly-brace-reader (stream inchar)
-       (declare (ignore inchar))
-       (let ((spec (read-delimited-list #\} stream t)))
-         (if (eq (cadr spec) '_)
-             `(rcurry (function ,(car spec)) ,@(cddr spec))
-             `(curry (function ,(car spec)) ,@(cdr spec)))))
+     ,@(unless (fboundp 'lcurly-brace-reader)
+         `((defun lcurly-brace-reader (stream inchar)
+             (declare (ignore inchar))
+             (let ((spec (read-delimited-list #\} stream t)))
+               (if (eq (cadr spec) '_)
+                   `(rcurry (function ,(car spec)) ,@(cddr spec))
+                   `(curry (function ,(car spec)) ,@(cdr spec)))))))
 
      (set-macro-character #\{ #'lcurly-brace-reader)
      (set-macro-character #\} (get-macro-character #\) ))
@@ -101,9 +102,10 @@
      (set-syntax-from-char #\[ #\( )
      (set-syntax-from-char #\] #\) )
 
-     (defun lsquare-brace-reader (stream inchar)
-       (declare (ignore inchar))
-       (cons 'compose (read-delimited-list #\] stream t)))
+     ,@(unless (fboundp 'lsquare-brace-reader)
+         `((defun lsquare-brace-reader (stream inchar)
+             (declare (ignore inchar))
+             (cons 'compose (read-delimited-list #\] stream t)))))
 
      (set-macro-character #\[ #'lsquare-brace-reader)
      (set-macro-character #\] (get-macro-character #\) ))
@@ -116,13 +118,14 @@
                   (set-syntax-from-char #\« #\( )
                   (set-syntax-from-char #\» #\) )
 
-                  (defun langle-quotation-reader (stream inchar)
-                    (declare (ignore inchar))
-                    (let ((contents (read-delimited-list #\» stream t))
-                          (args (gensym "langle-quotation-reader")))
-                      `(lambda (&rest ,args)
-                         (,(car contents)    ; Join function (or macro).
-                           ,@(mapcar (lambda (fun) `(apply ,fun ,args)) (cdr contents))))))
+                  ,@(unless (fboundp 'langle-quotation-reader)
+                      `((defun langle-quotation-reader (stream inchar)
+                          (declare (ignore inchar))
+                          (let ((contents (read-delimited-list #\» stream t))
+                                (args (gensym "langle-quotation-reader")))
+                            `(lambda (&rest ,args)
+                               (,(car contents)    ; Join function (or macro).
+                                 ,@(mapcar (lambda (fun) `(apply ,fun ,args)) (cdr contents))))))))
 
                   (set-macro-character #\« #'langle-quotation-reader)
                   (set-macro-character #\» (get-macro-character #\)))))))
