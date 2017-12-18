@@ -20,27 +20,29 @@ The following examples demonstrate usage.
     ;; function composition
     (mapcar [#'list {* 2}] '(1 2 3 4)) ; => ((2) (4) (6) (8))
 
-Additionally, if optional utf8 support is enabled, special brackets
-may be used to split arguments amongst a list of functions and collect
-the results.  The first element of the `«»`-delimited list is the
-"join" function.  Incoming arguments are split out to the remaining
-functions in the `«»`-delimited list, and their results are then
-passed to the join function.
+Additionally special brackets may be used to split arguments amongst a
+list of functions and collect the results.  The first element of the
+`«»`-delimited list is the "join" function.  Incoming arguments are
+split out to the remaining functions in the `«»`-delimited list, and
+their results are then passed to the join function.
 
     ;; function split and join
     (mapcar «list {* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
     (mapcar «and {< 2} #'evenp» '(1 2 3 4)) ; => (NIL NIL NIL T)
     (mapcar «+ {* 2} {- _ 1}» '(1 2 3 4)) ; => (2 5 8 11)
 
-`enable-curry-compose-reader-macros` is a macro which wraps itself in
-`eval-when` to ensure that reader macros are defined for both
-compilation and execution.
+Load CURRY-COMPOSE-READER-MACROS at the REPL with the following
 
-    (enable-curry-compose-reader-macros)
+    (ql:quickload :curry-compose-reader-macros)
+    (ql:quickload :named-readtables)
+    (use-package 'named-readtables)
+    (in-readtable curry-compose-reader-macros:syntax)
 
-Or to load utf8 support as well (which is probably going too far).
+Use CURRY-COMPOSE-READER-MACROS in source by adding NAMED-READTABLES
+and CURRY-COMPOSE-READER-MACROS to your ASDF file and package and then
+including the following in source files which use these reader macros.
 
-    (enable-curry-compose-reader-macros :include-utf8)
+    (in-readtable :curry-compose-reader-macros)
 
 Emacs users may easily treat `{}`'s, `[]`'s and `«»`'s as parenthesis
 for paredit commands and SEXP movement with the following

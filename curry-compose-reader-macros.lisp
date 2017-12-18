@@ -44,13 +44,19 @@
 ;;     (mapcar «and {< 2} #'evenp» '(1 2 3 4)) ; => (NIL NIL NIL T)
 ;;     (mapcar «+ {* 2} {- _ 1}» '(1 2 3 4)) ; => (2 5 8 11)
 ;;
-;; `enable-curry-compose-reader-macros' is a macro which wraps itself
-;; in `eval-when' to ensure that reader macros are defined for both
-;; compilation and execution.
+;; Load CURRY-COMPOSE-READER-MACROS at the REPL with the following
 ;;
-;; Or to load utf8 support as well (which is probably going too far).
+;;     (ql:quickload :curry-compose-reader-macros)
+;;     (ql:quickload :named-readtables)
+;;     (use-package 'named-readtables)
+;;     (in-readtable curry-compose-reader-macros:syntax)
 ;;
-;;     (enable-curry-compose-reader-macros :include-utf8)
+;; Use CURRY-COMPOSE-READER-MACROS in source by adding
+;; NAMED-READTABLES and CURRY-COMPOSE-READER-MACROS to your ASDF file
+;; and package and then including the following in source files which
+;; use these reader macros.
+;;
+;;     (in-readtable :curry-compose-reader-macros)
 ;;
 ;; Emacs users may easily treat {}'s, []'s and «»'s as parenthesis
 ;; for paredit commands and SEXP movement with the following
@@ -77,59 +83,33 @@
 ;;; Code:
 (in-package :curry-compose-reader-macros)
 
-(defvar *previous-readtables* nil)
+(defun lcurly-brace-reader (stream inchar)
+  (declare (ignore inchar))
+  (let ((spec (read-delimited-list #\} stream t)))
+    (if (eq (cadr spec) '_)
+        `(rcurry (function ,(car spec)) ,@(cddr spec))
+        `(curry (function ,(car spec)) ,@(cdr spec)))))
 
-(defmacro enable-curry-compose-reader-macros (&optional include-utf8)
-  "Enable concise syntax for Alexandria's `curry', `rcurry' and `compose'."
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (push *readtable* *previous-readtables*)
-     ;; partial application with {} using Alexandria's `curry' and `rcurry'
-     (set-syntax-from-char #\{ #\( )
-     (set-syntax-from-char #\} #\) )
+(defun lsquare-brace-reader (stream inchar)
+  (declare (ignore inchar))
+  (cons 'compose (read-delimited-list #\] stream t)))
 
-     ,@(unless (fboundp 'lcurly-brace-reader)
-         `((defun lcurly-brace-reader (stream inchar)
-             (declare (ignore inchar))
-             (let ((spec (read-delimited-list #\} stream t)))
-               (if (eq (cadr spec) '_)
-                   `(rcurry (function ,(car spec)) ,@(cddr spec))
-                   `(curry (function ,(car spec)) ,@(cdr spec)))))))
+(defun langle-quotation-reader (stream inchar)
+  (declare (ignore inchar))
+  (let ((contents (read-delimited-list #\» stream t))
+        (args (gensym "langle-quotation-reader")))
+    `(lambda (&rest ,args)
+       (,(car contents)                 ; Join function (or macro).
+         ,@(mapcar (lambda (fun) `(apply ,fun ,args)) (cdr contents))))))
 
-     (set-macro-character #\{ #'lcurly-brace-reader)
-     (set-macro-character #\} (get-macro-character #\) ))
+(defreadtable :curry-compose-reader-macros
+  (:merge :current)
 
-     ;; composition with [] using Alexandria's `compose'
-     (set-syntax-from-char #\[ #\( )
-     (set-syntax-from-char #\] #\) )
+  (:macro-char #\{ #'curry-compose-reader-macros::lcurly-brace-reader)
+  (:macro-char #\} (get-macro-character #\) ))
 
-     ,@(unless (fboundp 'lsquare-brace-reader)
-         `((defun lsquare-brace-reader (stream inchar)
-             (declare (ignore inchar))
-             (cons 'compose (read-delimited-list #\] stream t)))))
+  (:macro-char #\[ #'curry-compose-reader-macros::lsquare-brace-reader)
+  (:macro-char #\] (get-macro-character #\) ))
 
-     (set-macro-character #\[ #'lsquare-brace-reader)
-     (set-macro-character #\] (get-macro-character #\) ))
-
-     ,@(when include-utf8
-         `(;; inform lisp that source code is encoded in UTF-8
-           #+sbcl (setf sb-impl::*default-external-format* :UTF-8)
-
-                  ;; list split collection with «»
-                  (set-syntax-from-char #\« #\( )
-                  (set-syntax-from-char #\» #\) )
-
-                  ,@(unless (fboundp 'langle-quotation-reader)
-                      `((defun langle-quotation-reader (stream inchar)
-                          (declare (ignore inchar))
-                          (let ((contents (read-delimited-list #\» stream t))
-                                (args (gensym "langle-quotation-reader")))
-                            `(lambda (&rest ,args)
-                               (,(car contents)    ; Join function (or macro).
-                                 ,@(mapcar (lambda (fun) `(apply ,fun ,args)) (cdr contents))))))))
-
-                  (set-macro-character #\« #'langle-quotation-reader)
-                  (set-macro-character #\» (get-macro-character #\)))))))
-
-(defmacro disable-curry-compose-reader-macros ()
-  '(eval-when (:compile-toplevel :load-toplevel :execute)
-    (setf *readtable* (pop *previous-readtables*))))
+  (:macro-char #\« #'curry-compose-reader-macros::langle-quotation-reader)
+  (:macro-char #\» (get-macro-character #\) )))
