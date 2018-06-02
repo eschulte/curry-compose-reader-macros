@@ -36,7 +36,7 @@ Load CURRY-COMPOSE-READER-MACROS at the REPL with the following
     (ql:quickload :curry-compose-reader-macros)
     (ql:quickload :named-readtables)
     (use-package 'named-readtables)
-    (in-readtable curry-compose-reader-macros:syntax)
+    (in-readtable :curry-compose-reader-macros)
 
 Use CURRY-COMPOSE-READER-MACROS in source by adding NAMED-READTABLES
 and CURRY-COMPOSE-READER-MACROS to your ASDF file and package and then
