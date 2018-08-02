@@ -24,7 +24,8 @@ Additionally special brackets may be used to split arguments amongst a
 list of functions and collect the results.  The first element of the
 `«»`-delimited list is the "join" function.  Incoming arguments are
 split out to the remaining functions in the `«»`-delimited list, and
-their results are then passed to the join function.
+their results are then passed to the join function.  (Emacs users can
+type `«` and `»` with `C-x 8 <` and `C-x 8 >` respectively)
 
     ;; function split and join
     (mapcar «list {* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
