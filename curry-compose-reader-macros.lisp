@@ -84,8 +84,10 @@
 ;;         (define-key paredit-mode-map "]" 'paredit-close-parenthesis)
 ;;         (define-key paredit-mode-map "(" 'paredit-open-bracket)
 ;;         (define-key paredit-mode-map ")" 'paredit-close-bracket)
-;;         (define-key paredit-mode-map "{" 'paredit-open-curly)
-;;         (define-key paredit-mode-map "}" 'paredit-close-curly)))
+;;         (define-key paredit-mode-map "«" 'paredit-open-special)
+;;         (define-key paredit-mode-map "»" 'paredit-close-special)))
+;;
+;; Also, Emacs will insert `«` with `C-x 8 <` and `»` with `C-x 8 >`.
 
 ;;; Code:
 (in-package :curry-compose-reader-macros)
