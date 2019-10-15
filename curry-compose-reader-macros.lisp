@@ -2,7 +2,20 @@
 
 ;; Copyright (C) Eric Schulte 2013
 
-;; Licensed under the Gnu Public License Version 3 or later
+;; Placed in the public domain.
+
+;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+;; FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+;; COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+;; INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+;; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+;; SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+;; HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+;; STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+;; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+;; OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;; Commentary
 
@@ -26,23 +39,44 @@
 ;;     ;; function composition
 ;;     (mapcar [#'list {* 2}] '(1 2 3 4)) ; => ((2) (4) (6) (8))
 ;;
-;; Call `enable-curry-compose-reader-macros' from within `eval-when'
-;; to ensure that reader macros are defined for both compilation and
-;; execution.
+;; Additionally special brackets may be used to split arguments amongst a
+;; list of functions and collect the results.  The first element of the
+;; `«»`-delimited list is the "join" function.  Incoming arguments are
+;; split out to the remaining functions in the `«»`-delimited list, and
+;; their results are then passed to the join function.  (Emacs users can
+;; type `«` and `»` with `C-x 8 <` and `C-x 8 >` respectively)
 ;;
-;;     (eval-when (:compile-toplevel :load-toplevel :execute)
-;;       (enable-curry-compose-reader-macros))
+;;     ;; function split and join
+;;     (mapcar «list {* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
+;;     (mapcar «and {< 2} #'evenp» '(1 2 3 4)) ; => (NIL NIL NIL T)
+;;     (mapcar «+ {* 2} {- _ 1}» '(1 2 3 4)) ; => (2 5 8 11)
 ;;
-;; Emacs users may easily treat {}'s and []'s like parenthesis for
-;; paredit commands and SEXP movement with the following
+;; Load CURRY-COMPOSE-READER-MACROS at the REPL with the following
+;;
+;;     (ql:quickload :curry-compose-reader-macros)
+;;     (ql:quickload :named-readtables)
+;;     (use-package 'named-readtables)
+;;     (in-readtable :curry-compose-reader-macros)
+;;
+;; Use CURRY-COMPOSE-READER-MACROS in source by adding
+;; NAMED-READTABLES and CURRY-COMPOSE-READER-MACROS to your ASDF file
+;; and package and then including the following in source files which
+;; use these reader macros.
+;;
+;;     (in-readtable :curry-compose-reader-macros)
+;;
+;; Emacs users may easily treat {}'s, []'s and «»'s as parenthesis
+;; for paredit commands and SEXP movement with the following
 ;; configuration.
-;; 
+;;
 ;;     ;; Syntax table
 ;;     (modify-syntax-entry ?\[ "(]" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\{ "(}" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\} "){" lisp-mode-syntax-table)
-;;     
+;;     (modify-syntax-entry ?\« "(»" lisp-mode-syntax-table)
+;;     (modify-syntax-entry ?\» ")«" lisp-mode-syntax-table)
+;;
 ;;     ;; Paredit keys
 ;;     (eval-after-load "paredit"
 ;;       '(progn
@@ -50,42 +84,41 @@
 ;;         (define-key paredit-mode-map "]" 'paredit-close-parenthesis)
 ;;         (define-key paredit-mode-map "(" 'paredit-open-bracket)
 ;;         (define-key paredit-mode-map ")" 'paredit-close-bracket)
-;;         (define-key paredit-mode-map "{" 'paredit-open-curly)
-;;         (define-key paredit-mode-map "}" 'paredit-close-curly)))
+;;         (define-key paredit-mode-map "«" 'paredit-open-special)
+;;         (define-key paredit-mode-map "»" 'paredit-close-special)))
+;;
+;; Also, Emacs will insert `«` with `C-x 8 <` and `»` with `C-x 8 >`.
 
 ;;; Code:
 (in-package :curry-compose-reader-macros)
 
-(defun enable-curry-compose-reader-macros ()
-  "Enable concise syntax for Alexandria's `curry', `rcurry' and `compose'.
+(defun lcurly-brace-reader (stream inchar)
+  (declare (ignore inchar))
+  (let ((spec (read-delimited-list #\} stream t)))
+    (if (eq (cadr spec) '_)
+        `(rcurry (function ,(car spec)) ,@(cddr spec))
+        `(curry (function ,(car spec)) ,@(cdr spec)))))
 
-Calls to this function should be wrapped in `eval-when' as shown below
-to ensure evaluation during compilation.
+(defun lsquare-brace-reader (stream inchar)
+  (declare (ignore inchar))
+  (cons 'compose (read-delimited-list #\] stream t)))
 
-    (eval-when (:compile-toplevel :load-toplevel :execute)
-      (enable-curry-compose-reader-macros))
-"
-  ;; partial application with {} using Alexandria's `curry' and `rcurry'
-  (set-syntax-from-char #\{ #\( )
-  (set-syntax-from-char #\} #\) )
+(defun langle-quotation-reader (stream inchar)
+  (declare (ignore inchar))
+  (let ((contents (read-delimited-list #\» stream t))
+        (args (gensym "langle-quotation-reader")))
+    `(lambda (&rest ,args)
+       (,(car contents)                 ; Join function (or macro).
+         ,@(mapcar (lambda (fun) `(apply ,fun ,args)) (cdr contents))))))
 
-  (defun lcurly-brace-reader (stream inchar)
-    (declare (ignore inchar))
-    (let ((spec (read-delimited-list #\} stream t)))
-      (if (eq (cadr spec) '_)
-          `(rcurry (function ,(car spec)) ,@(cddr spec))
-          `(curry (function ,(car spec)) ,@(cdr spec)))))
+(defreadtable :curry-compose-reader-macros
+  (:merge :current)
 
-  (set-macro-character #\{ #'lcurly-brace-reader)
-  (set-macro-character #\} (get-macro-character #\) ))
+  (:macro-char #\{ #'curry-compose-reader-macros::lcurly-brace-reader)
+  (:macro-char #\} (get-macro-character #\) ))
 
-  ;; composition with [] using Alexandria's `compose'
-  (set-syntax-from-char #\[ #\( )
-  (set-syntax-from-char #\] #\) )
+  (:macro-char #\[ #'curry-compose-reader-macros::lsquare-brace-reader)
+  (:macro-char #\] (get-macro-character #\) ))
 
-  (defun lsquare-brace-reader (stream inchar)
-    (declare (ignore inchar))
-    (cons 'compose (read-delimited-list #\] stream t)))
-
-  (set-macro-character #\[ #'lsquare-brace-reader)
-  (set-macro-character #\] (get-macro-character #\) )))
+  (:macro-char #\« #'curry-compose-reader-macros::langle-quotation-reader)
+  (:macro-char #\» (get-macro-character #\) )))

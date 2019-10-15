@@ -3,8 +3,8 @@
   "reader macros for concise function partial application and composition"
   :author "Eric Schulte <schulte.eric@gmail.com>"
   :version "1.0.0"
-  :licence "GPL V3"
-  :depends-on (alexandria)
+  :licence "Public Domain"
+  :depends-on (alexandria named-readtables)
   :components
   ((:file "package")
    (:file "curry-compose-reader-macros" :depends-on ("package"))))
