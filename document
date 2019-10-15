@@ -11,6 +11,7 @@
  :subtitle "concise function partial application and composition"
  :abstract "CURRY-COMPOSE-READER-MACROS exports a single function
  which may be called to enable reading of <code>{}</code> braces as
- partial function application and <code>[]</code> brackets as function
- composition."
+ partial function application <code>[]</code> brackets as function
+ composition and <code>&#171;&#187;</code> braces split/join across
+ multiple functions."
  :source "http://github.com/eschulte/curry-compose-reader-macros")

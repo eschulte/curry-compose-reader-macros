@@ -30,8 +30,9 @@
 
 <p>CURRY-COMPOSE-READER-MACROS exports a single function
  which may be called to enable reading of <code>{}</code> braces as
- partial function application and <code>[]</code> brackets as function
- composition.</p>
+ partial function application <code>[]</code> brackets as function
+ composition and <code>&#171;&#187;</code> braces split/join across
+ multiple functions.</p>
 
 The code is available in the public domain.
 
@@ -45,7 +46,6 @@ The code is available in the public domain.
   <li><a href="#introduction">Introduction</a></li>
   <li><a href="#dictionary">The CURRY-COMPOSE-READER-MACROS dictionary</a></li>
     <ol>
-      <li><a href="#enable-curry-compose-reader-macros"><code>enable-curry-compose-reader-macros</code></a></li>
     </ol>
   <li><a href="#ack">Acknowledgements</a></li>
 </ol>
@@ -78,16 +78,37 @@ of arguments with <code>rcurry</code>.</p>
 (mapcar [#'list {* 2}] '(1 2 3 4)) ; =&gt; ((2) (4) (6) (8))
 </code></pre>
 
-<p>Call <code>enable-curry-compose-reader-macros</code> from within <code>eval-when</code>
-to ensure that reader macros are defined for both compilation and
-execution.</p>
+<p>Additionally special brackets may be used to split arguments amongst a
+list of functions and collect the results.  The first element of the
+<code>&#171;&#187;</code>-delimited list is the &ldquo;join&rdquo; function.  Incoming arguments are
+split out to the remaining functions in the <code>&#171;&#187;</code>-delimited list, and
+their results are then passed to the join function.  (Emacs users can
+type <code>&#171;</code> and <code>&#187;</code> with <code>C-x 8 &lt;</code> and <code>C-x 8 &gt;</code> respectively)</p>
 
-<pre><code>(eval-when (:compile-toplevel :load-toplevel :execute)
-  (enable-curry-compose-reader-macros))
+<pre><code>;; function split and join
+(mapcar &#171;list {* 2} {* 3}&#187; '(1 2 3 4)) ; =&gt; ((2 3) (4 6) (6 9) (8 12))
+(mapcar &#171;and {&lt; 2} #'evenp&#187; '(1 2 3 4)) ; =&gt; (NIL NIL NIL T)
+(mapcar &#171;+ {* 2} {- _ 1}&#187; '(1 2 3 4)) ; =&gt; (2 5 8 11)
 </code></pre>
 
-<p>Emacs users may easily treat {}'s and []'s like parenthesis for
-paredit commands and SEXP movement with the following
+<p>Load CURRY-COMPOSE-READER-MACROS at the REPL with the following</p>
+
+<pre><code>(ql:quickload :curry-compose-reader-macros)
+(ql:quickload :named-readtables)
+(use-package 'named-readtables)
+(in-readtable :curry-compose-reader-macros)
+</code></pre>
+
+<p>Use CURRY-COMPOSE-READER-MACROS in source by adding
+NAMED-READTABLES and CURRY-COMPOSE-READER-MACROS to your ASDF file
+and package and then including the following in source files which
+use these reader macros.</p>
+
+<pre><code>(in-readtable :curry-compose-reader-macros)
+</code></pre>
+
+<p>Emacs users may easily treat {}&rsquo;s, []&rsquo;s and &#171;&#187;&rsquo;s as parenthesis
+for paredit commands and SEXP movement with the following
 configuration.</p>
 
 <pre><code>;; Syntax table
@@ -95,6 +116,8 @@ configuration.</p>
 (modify-syntax-entry ?\] ")[" lisp-mode-syntax-table)
 (modify-syntax-entry ?\{ "(}" lisp-mode-syntax-table)
 (modify-syntax-entry ?\} "){" lisp-mode-syntax-table)
+(modify-syntax-entry ?\&#171; "(&#187;" lisp-mode-syntax-table)
+(modify-syntax-entry ?\&#187; ")&#171;" lisp-mode-syntax-table)
 
 ;; Paredit keys
 (eval-after-load "paredit"
@@ -103,32 +126,13 @@ configuration.</p>
     (define-key paredit-mode-map "]" 'paredit-close-parenthesis)
     (define-key paredit-mode-map "(" 'paredit-open-bracket)
     (define-key paredit-mode-map ")" 'paredit-close-bracket)
-    (define-key paredit-mode-map "{" 'paredit-open-curly)
-    (define-key paredit-mode-map "}" 'paredit-close-curly)))
+    (define-key paredit-mode-map "&#171;" 'paredit-open-special)
+    (define-key paredit-mode-map "&#187;" 'paredit-close-special)))
 </code></pre>
 
+<p>Also, Emacs will insert <code>&#171;</code> with <code>C-x 8 &lt;</code> and <code>&#187;</code> with <code>C-x 8 &gt;</code>.</p>
+
 <br>&nbsp;<br><h3><a class=none name="dictionary">The CURRY-COMPOSE-READER-MACROS dictionary</a></h3>
-
-
-<!-- Entry for ENABLE-CURRY-COMPOSE-READER-MACROS -->
-
-<p><br>[Function]<br><a class=none name='enable-curry-compose-reader-macros'><b>enable-curry-compose-reader-macros</b> <i></i> =&gt; <i>result</i></a>
-<blockquote><br>
-
-Enable concise syntax for Alexandria's <code>curry</code>, <code>rcurry</code> and <code>compose</code>.
-
-Calls to this function should be wrapped in <code>eval-when</code> as shown below
-to ensure evaluation during compilation.
-
-<pre>
-    (eval-when (:compile-toplevel :load-toplevel :execute)
-      (enable-curry-compose-reader-macros))
-</pre>
-
-
-</blockquote>
-
-<!-- End of entry for ENABLE-CURRY-COMPOSE-READER-MACROS -->
 
 
 <br>&nbsp;<br><h3><a class=none name="ack">Acknowledgements</a></h3>
