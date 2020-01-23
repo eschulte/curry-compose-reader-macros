@@ -47,6 +47,8 @@ be included verbatim--this could be dangerous in some cases so beware.
                                             ; => (2 :STR 3 :STR)
     (mapcar ‹cond (#'evenp {+ 100}) (#'oddp {+ 200})› '(1 2 3 4))
                                             ; => (201 102 203 104)
+    ;; also if/when/unless support
+    (mapcar ‹if #'evenp #'1+ #'1-› '(1 2 3 4)) ; => (0 3 2 5)
 
 Load CURRY-COMPOSE-READER-MACROS at the REPL with the following
 

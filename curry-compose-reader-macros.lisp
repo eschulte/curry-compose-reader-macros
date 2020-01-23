@@ -66,6 +66,8 @@
 ;;                                             ; => (2 :STR 3 :STR)
 ;;     (mapcar ‹cond (#'evenp {+ 100}) (#'oddp {+ 200})› '(1 2 3 4))
 ;;                                             ; => (201 102 203 104)
+;;     ;; also if/when/unless support
+;;     (mapcar ‹if #'evenp #'1+ #'1-› '(1 2 3 4)) ; => (0 3 2 5)
 ;;
 ;; Load CURRY-COMPOSE-READER-MACROS at the REPL with the following
 ;;
@@ -142,19 +144,30 @@
 
 (defun lsingle-pointing-angle-quotation-mark-reader (stream inchar)
   (declare (ignore inchar))
-  (let ((contents (read-delimited-list #\› stream t))
-        (arg (gensym "lsingle-pointing-angle-quotation-mark-reader")))
-    `(lambda (,arg)
-       (,(car contents)                 ; Case form.
-         ,@(unless (eql (car contents) 'cond) (list arg))
-         ,@(mapcar (lambda (clause)
-                     `(,(if (functionp (ignore-errors (eval (first clause))))
-                             `(funcall ,(first clause) ,arg)
-                             (first clause))
-                        ,(if (functionp (ignore-errors (eval (second clause))))
-                             `(funcall ,(second clause) ,arg)
-                             (second clause))))
-                   (cdr contents))))))
+  (flet ((function-p (form) (functionp (ignore-errors (eval form)))))
+    (let ((contents (read-delimited-list #\› stream t))
+          (arg (gensym "lsingle-pointing-angle-quotation-mark-reader")))
+      `(lambda (,arg)
+         (,(car contents)               ; Case form.
+           ,@(case (car contents)       ; If/when/unless guard.
+               ((if when unless)
+                `((funcall ,(cadr contents) ,arg)))
+               (cond nil)
+               (t (list arg)))
+           ,@(if (member (car contents) '(if when unless)) ; Clauses.
+                 (mapcar (lambda (clause)
+                           (if (function-p clause)
+                               `(funcall ,clause ,arg)
+                               clause))
+                         (cddr contents))
+                 (mapcar (lambda (clause)
+                           `(,(if (function-p (car clause))
+                                  `(funcall ,(car clause) ,arg)
+                                  (car clause))
+                              ,(if (function-p (cadr clause))
+                                   `(funcall ,(cadr clause) ,arg)
+                                   (cadr clause))))
+                         (cdr contents))))))))
 
 (defreadtable :curry-compose-reader-macros
   (:merge :current)
