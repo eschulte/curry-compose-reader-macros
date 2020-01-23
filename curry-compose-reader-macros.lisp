@@ -39,7 +39,7 @@
 ;;     ;; function composition
 ;;     (mapcar [#'list {* 2}] '(1 2 3 4)) ; => ((2) (4) (6) (8))
 ;;
-;; Additionally special brackets may be used to split arguments amongst a
+;; Additionally, special brackets may be used to split arguments amongst a
 ;; list of functions and collect the results.  The first element of the
 ;; `«»`-delimited list is the "join" function.  Incoming arguments are
 ;; split out to the remaining functions in the `«»`-delimited list, and
@@ -50,6 +50,22 @@
 ;;     (mapcar «list {* 2} {* 3}» '(1 2 3 4)) ; => ((2 3) (4 6) (6 9) (8 12))
 ;;     (mapcar «and {< 2} #'evenp» '(1 2 3 4)) ; => (NIL NIL NIL T)
 ;;     (mapcar «+ {* 2} {- _ 1}» '(1 2 3 4)) ; => (2 5 8 11)
+;;
+;; Finally, and this is probably too much, even more special brackets can
+;; be useful for generating `cond`/`case` forms.  This can be useful for
+;; processing lists of heterogeneous types.  For `case` (not `cond`)
+;; forms, the first element of the `‹›`-delimited list is the case
+;; "keyform."  The other elements are two-element `cond`/`case` clauses
+;; in which the first is the guard, and the second is the value.
+;; Elements of the guard *are evaluated at read time* to determine if
+;; they are functions which should be applied, or literals which should
+;; be included verbatim--this could be dangerous in some cases so beware.
+;;
+;;     ;; concise case expressions
+;;     (mapcar ‹typecase (number #'1+) (string :str)› '(1 "this" 2 "that"))
+;;                                             ; => (2 :STR 3 :STR)
+;;     (mapcar ‹cond (#'evenp {+ 100}) (#'oddp {+ 200})› '(1 2 3 4))
+;;                                             ; => (201 102 203 104)
 ;;
 ;; Load CURRY-COMPOSE-READER-MACROS at the REPL with the following
 ;;
@@ -65,9 +81,9 @@
 ;;
 ;;     (in-readtable :curry-compose-reader-macros)
 ;;
-;; Emacs users may easily treat {}'s, []'s and «»'s as parenthesis
-;; for paredit commands and SEXP movement with the following
-;; configuration.
+;; Emacs users may easily treat {}'s, []'s, «»'s, and ‹›'s as
+;; parenthesis for paredit commands and SEXP movement with the
+;; following configuration.
 ;;
 ;;     ;; Syntax table
 ;;     (modify-syntax-entry ?\[ "(]" lisp-mode-syntax-table)
@@ -76,6 +92,8 @@
 ;;     (modify-syntax-entry ?\} "){" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\« "(»" lisp-mode-syntax-table)
 ;;     (modify-syntax-entry ?\» ")«" lisp-mode-syntax-table)
+;;     (modify-syntax-entry ?\‹ "(›" lisp-mode-syntax-table)
+;;     (modify-syntax-entry ?\› ")‹" lisp-mode-syntax-table)
 ;;
 ;;     ;; Paredit keys
 ;;     (eval-after-load "paredit"
@@ -85,9 +103,20 @@
 ;;         (define-key paredit-mode-map "(" 'paredit-open-bracket)
 ;;         (define-key paredit-mode-map ")" 'paredit-close-bracket)
 ;;         (define-key paredit-mode-map "«" 'paredit-open-special)
-;;         (define-key paredit-mode-map "»" 'paredit-close-special)))
+;;         (define-key paredit-mode-map "»" 'paredit-close-special)
+;;         (define-key paredit-mode-map "‹" 'paredit-open-special)
+;;         (define-key paredit-mode-map "›" 'paredit-close-special)))
 ;;
 ;; Also, Emacs will insert `«` with `C-x 8 <` and `»` with `C-x 8 >`.
+;; Emacs can be instructed to define similar key-bindings for `‹` with
+;; the following:
+;;
+;;     (global-set-key (kbd "\C-x 8 (") (lambda () (interactive) (insert-char #x2039)))
+;;     (global-set-key (kbd "\C-x 8 )") (lambda () (interactive) (insert-char #x203A)))
+;;
+;; which will cause Emacs to insert `‹` with `C-x 8 (` and `›` with
+;; `C-x 8 )` respectively.
+
 
 ;;; Code:
 (in-package :curry-compose-reader-macros)
@@ -111,6 +140,22 @@
        (,(car contents)                 ; Join function (or macro).
          ,@(mapcar (lambda (fun) `(apply ,fun ,args)) (cdr contents))))))
 
+(defun lsingle-pointing-angle-quotation-mark-reader (stream inchar)
+  (declare (ignore inchar))
+  (let ((contents (read-delimited-list #\› stream t))
+        (arg (gensym "lsingle-pointing-angle-quotation-mark-reader")))
+    `(lambda (,arg)
+       (,(car contents)                 ; Case form.
+         ,@(unless (eql (car contents) 'cond) (list arg))
+         ,@(mapcar (lambda (clause)
+                     `(,(if (functionp (ignore-errors (eval (first clause))))
+                             `(funcall ,(first clause) ,arg)
+                             (first clause))
+                        ,(if (functionp (ignore-errors (eval (second clause))))
+                             `(funcall ,(second clause) ,arg)
+                             (second clause))))
+                   (cdr contents))))))
+
 (defreadtable :curry-compose-reader-macros
   (:merge :current)
 
@@ -121,4 +166,7 @@
   (:macro-char #\] (get-macro-character #\) ))
 
   (:macro-char #\« #'curry-compose-reader-macros::langle-quotation-reader)
-  (:macro-char #\» (get-macro-character #\) )))
+  (:macro-char #\» (get-macro-character #\) ))
+
+  (:macro-char #\‹ #'curry-compose-reader-macros::lsingle-pointing-angle-quotation-mark-reader)
+  (:macro-char #\› (get-macro-character #\) )))
