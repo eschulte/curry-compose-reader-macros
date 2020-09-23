@@ -127,12 +127,13 @@
   (declare (ignore inchar))
   (let ((spec (read-delimited-list #\} stream t)))
     (if (eq (cadr spec) '_)
-        `(the function (rcurry (function ,(car spec)) ,@(cddr spec)))
-        `(the function (curry (function ,(car spec)) ,@(cdr spec))))))
+        `(the (values function &optional) (rcurry (function ,(car spec)) ,@(cddr spec)))
+        `(the (values function &optional) (curry (function ,(car spec)) ,@(cdr spec))))))
 
 (defun lsquare-brace-reader (stream inchar)
   (declare (ignore inchar))
-  (list 'the 'function (cons 'compose (read-delimited-list #\] stream t))))
+  (list 'the '(values function &optional)
+        (cons 'compose (read-delimited-list #\] stream t))))
 
 (defun langle-quotation-reader (stream inchar)
   (declare (ignore inchar))
