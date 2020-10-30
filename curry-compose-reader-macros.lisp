@@ -38,15 +38,15 @@
 ;;
 ;;     ;; function composition
 ;;     (mapcar [#'list {* 2}] '(1 2 3 4)) ; => ((2) (4) (6) (8))
-
+;;
 ;; If the left curly brace is followed by a non-negative integer, the
 ;; integer defines the number of additional parameters the curried
 ;; function expects.  This allows argument number mismatch to be detected
 ;; statically and may cause more efficient code to be generated.
 ;;
-;;    ;; The + will be on two arguments, one of which
-;;    ;; is provided
-;;    (mapcar {1 + 5} '(1 2 3 4)) ; ==> (6 7 8 9)
+;;     ;; The + will be on two arguments, one of which
+;;     ;; is provided
+;;     (mapcar {1 + 5} '(1 2 3 4)) ; ==> (6 7 8 9)
 ;;
 ;; Additionally, special brackets may be used to split arguments amongst a
 ;; list of functions and collect the results.  The first element of the
