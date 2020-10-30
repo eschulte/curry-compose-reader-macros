@@ -51,6 +51,10 @@
   (funcall (er "{1 list 1}") 2)
   (1 2))
 
+(deftest curry.fixed-arity.2
+  (funcall (er "{2 list _ 2}") 3 4)
+  (3 4 2))
+
 (deftest curry.fixed-arity-error.1
   (locally (declare (optimize safety))
     (let ((fn (er "{1 list 1}")))
